@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>אליאווז</title>
+
+<style>
+
+body{
+margin:0;
+background:#182018;
+color:white;
+font-family:monospace;
+text-align:center;
+overflow:hidden;
+}
+
+#logo{
+font-size:45px;
+font-weight:bold;
+color:#ffe45e;
+text-shadow:
+4px 4px #74401d;
+margin:10px;
+}
+
+#hud{
+font-size:22px;
+margin:5px;
+}
+
+canvas{
+background:#58a83e;
+border:6px solid #4b2b12;
+image-rendering:pixelated;
+max-width:95vw;
+}
+
+.controls{
+display:flex;
+justify-content:center;
+gap:20px;
+direction:ltr;
+margin-top:10px;
+}
+
+button{
+font-size:30px;
+padding:10px 25px;
+background:#ffe45e;
+border:4px solid #55300e;
+box-shadow:4px 4px #222;
+}
+
+#shop{
+
+display:none;
+position:absolute;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:#101810;
+z-index:5;
+overflow:auto;
+
+}
+
+.skinBox{
+
+display:inline-block;
+background:#d8bd80;
+color:#222;
+border:4px solid #53300f;
+margin:8px;
+padding:10px;
+width:150px;
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<div id="logo">
+🪿 אליאווז 🥙
+</div>
+
+
+<div id="hud">
+
+💰 <span id="money">0</span>
+
+❤️ <span id="life">3</span>
+
+🏆 <span id="best">0</span>
+
+</div>
+
+
+
+<canvas id="game" width="400" height="600"></canvas>
+
+
+<div class="controls">
+
+<button onclick="moveLeft()">⬅️</button>
+
+<button onclick="openShop()">🛒</button>
+
+<button onclick="moveRight()">➡️</button>
+
+</div>
+
+
+
+<div id="shop">
+
+<h1>🛒 חנות אליאווז</h1>
+
+<div id="skinList"></div>
+
+<button onclick="closeShop()">חזרה</button>
+
+</div>
+
+
+
+
+<script>
+
+
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
+
+
+
+let money=0;
+let lives=3;
+let score=0;
+
+let best=
+Number(localStorage.getItem("eliavazBest"))||0;
+
+
+
+document.getElementById("best").innerHTML=best;
+
+
+
+let gameOver=false;
+let started=false;
+let frame=0;
+
+let speed=4;
+
+
+
+const lanes=[
+120,
+280
+];
+
+
+
+const goose={
+
+lane:0,
+
+x:120,
+
+target:120,
+
+y:500,
+
+walk:0
+
+};
+
+
+
+let objects=[];
+
+
+
+function moveLeft(){
+
+started=true;
+
+goose.lane=0;
+
+goose.target=lanes[0];
+
+}
+
+
+
+function moveRight(){
+
+started=true;
+
+goose.lane=1;
+
+goose.target=lanes[1];
+
+}
+
+
+
+document.addEventListener("keydown",e=>{
+
+if(e.key==="ArrowLeft")
+moveLeft();
+
+if(e.key==="ArrowRight")
+moveRight();
+
+});
+
+
+
+
+
+function drawRoad(){
+
+
+ctx.fillStyle="#58a83e";
+ctx.fillRect(0,0,400,600);
+
+
+
+ctx.fillStyle="#c4a36b";
+ctx.fillRect(50,0,300,600);
+
+
+
+ctx.fillStyle="#fff";
+
+for(let y=0;y<600;y+=70){
+
+ctx.fillRect(195,y,10,35);
+
+}
+
+
+}
+
+
+
+
+function drawGoose(){
+
+
+goose.x +=
+(goose.target-goose.x)*0.2;
+
+
+goose.walk+=0.1;
+
+
+
+ctx.font="45px Arial";
+
+ctx.fillText(
+"🪿",
+goose.x,
+goose.y
+);
+
+
+}
+
+
+
+
+function draw(){
+
+ctx.clearRect(0,0,400,600);
+
+drawRoad();
+
+drawObjects();
+
+drawGoose();
+
+
+}
+
+
+
+
+
+function loop(){
+
+if(!gameOver){
+
+update();
+
+}
+
+draw();
+
+requestAnimationFrame(loop);
+
+}
+const foods=[
+
+{icon:"🍞",points:1},
+{icon:"🍎",points:2},
+{icon:"🌽",points:5},
+{icon:"🍕",points:8},
+{icon:"🧀",points:10},
+{icon:"🥙",points:25}
+
+];
+
+
+const obstacles=[
+
+"🪨",
+"🪵",
+"🚧",
+"💧"
+
+];
+
+
+
+function spawnObject(){
+
+
+let lane=Math.floor(Math.random()*2);
+
+
+if(Math.random()<0.7){
+
+
+let food=
+foods[Math.floor(Math.random()*foods.length)];
+
+
+objects.push({
+
+x:lanes[lane],
+y:-40,
+type:"food",
+icon:food.icon,
+points:food.points
+
+});
+
+
+}
+
+else{
+
+
+objects.push({
+
+x:lanes[lane],
+y:-40,
+type:"obstacle",
+icon:
+obstacles[Math.floor(Math.random()*obstacles.length)]
+
+});
+
+
+}
+
+
+}
+
+
+
+
+function drawObjects(){
+
+
+ctx.font="40px Arial";
+
+
+objects.forEach(o=>{
+
+
+ctx.fillText(
+o.icon,
+o.x,
+o.y
+);
+
+
+});
+
+
+}
+
+
+
+
+
+function hit(a,b){
+
+
+return Math.abs(a.x-b.x)<35 &&
+Math.abs(a.y-b.y)<35;
+
+
+}
+
+
+
+
+
+function update(){
+
+
+if(!started)return;
+
+
+frame++;
+
+
+
+if(frame%60===0){
+
+spawnObject();
+
+}
+
+
+
+
+objects.forEach(o=>{
+
+
+o.y+=speed;
+
+
+});
+
+
+
+
+
+for(let i=objects.length-1;i>=0;i--){
+
+
+let o=objects[i];
+
+
+if(hit(goose,o)){
+
+
+
+if(o.type==="food"){
+
+
+
+money+=o.points;
+
+score+=o.points;
+
+
+document.getElementById("money").innerHTML=
+money;
+
+
+
+objects.splice(i,1);
+
+
+
+}
+
+
+
+else{
+
+
+lives--;
+
+
+document.getElementById("life").innerHTML=
+lives;
+
+
+objects.splice(i,1);
+
+
+
+if(lives<=0){
+
+endGame();
+
+}
+
+
+
+}
+
+
+
+}
+
+
+
+}
+
+
+
+objects=
+objects.filter(o=>o.y<650);
+
+
+
+speed=4+score/100;
+
+
+
+}
+
+
+
+
+
+function endGame(){
+
+
+gameOver=true;
+
+
+
+if(score>best){
+
+
+best=score;
+
+localStorage.setItem(
+"eliavazBest",
+best
+);
+
+
+}
+
+
+alert(
+"נגמר המשחק! 🪿\nניקוד: "+score
+);
+
+
+}
+=====
+
+
+let ownedSkins =
+JSON.parse(localStorage.getItem("eliavazSkins"))
+|| ["normal"];
+
+
+let selectedSkin =
+localStorage.getItem("eliavazSelected")
+|| "normal";
+
+
+
+const skins=[
+
+
+{id:"normal",name:"אווז רגיל",price:0},
+
+{id:"black",name:"אווז שחור",price:50},
+
+{id:"pink",name:"אווז ורוד",price:100},
+
+{id:"ice",name:"אווז קרח",price:200},
+
+{id:"fire",name:"אווז אש",price:400},
+
+{id:"ninja",name:"אווז נינג'ה",price:700},
+
+{id:"robot",name:"אווז רובוט",price:1000},
+
+{id:"gold",name:"אווז זהב",price:1500},
+
+{id:"corn",name:"אווז תירס 🌽",price:2000},
+
+{id:"space",name:"אווז חלל 🚀",price:2500},
+
+
+{id:"wizard",name:"אווז קוסם 🧙",price:3000},
+
+{id:"dino",name:"אווז דינוזאור 🦖",price:3500},
+
+{id:"diamond",name:"אווז יהלום 💎",price:4000},
+
+{id:"custom",name:"עיצוב אישי 🎨",price:5000}
+
+
+];
+
+
+
+
+
+function saveGame(){
+
+
+localStorage.setItem(
+"eliavazMoney",
+money
+);
+
+
+localStorage.setItem(
+"eliavazSkins",
+JSON.stringify(ownedSkins)
+);
+
+
+localStorage.setItem(
+"eliavazSelected",
+selectedSkin
+);
+
+
+}
+
+
+
+
+
+function openShop(){
+
+
+document.getElementById("shop").style.display="block";
+
+
+drawShop();
+
+
+}
+
+
+
+
+
+function closeShop(){
+
+
+document.getElementById("shop").style.display="none";
+
+
+}
+
+
+
+
+
+function drawShop(){
+
+
+let list=
+document.getElementById("skinList");
+
+
+list.innerHTML="";
+
+
+
+skins.forEach(s=>{
+
+
+let box=document.createElement("div");
+
+
+box.className="skinBox";
+
+
+
+box.innerHTML=`
+
+<h3>${s.name}</h3>
+
+<p>${s.price} 💰</p>
+
+<button>
+${
+selectedSkin==s.id
+?"נבחר ✓"
+:
+ownedSkins.includes(s.id)
+?"בחר"
+:"קנה"
+}
+
+</button>
+
+`;
+
+
+
+box.querySelector("button").onclick=()=>{
+
+
+if(ownedSkins.includes(s.id)){
+
+
+selectedSkin=s.id;
+
+saveGame();
+
+drawShop();
+
+
+}
+
+else if(money>=s.price){
+
+
+
+money-=s.price;
+
+
+ownedSkins.push(s.id);
+
+
+selectedSkin=s.id;
+
+
+saveGame();
+
+
+document.getElementById("money").innerHTML=
+money;
+
+
+drawShop();
+
+
+}
+
+else{
+
+
+alert("אין מספיק כסף 🪙");
+
+
+}
+
+
+
+};
+
+
+
+list.appendChild(box);
+
+
+
+});
+
+
+
+}
+
+
+
+
+
+function customDesign(){
+
+
+let color=
+prompt(
+"צבע גוף האווז:"
+);
+
+
+if(color){
+
+
+alert(
+"האווז שלך עוצב בצבע "+color+" 🎨"
+);
+
+
+}
+
+
+}
+
+
+
+
+
+// שמירת כסף בזמן איסוף אוכל
+
+
+let oldMoney=money;
+
+
+setInterval(()=>{
+
+
+if(money!=oldMoney){
+
+
+oldMoney=money;
+
+saveGame();
+
+
+}
+
+
+},1000);
+
+
+
+
+
+// טעינה ראשונית
+
+
+document.getElementById("money").innerHTML=
+money;
+loop();
+
+</script>
+</body>
+</html>
